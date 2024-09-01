@@ -145,9 +145,10 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
       <div className="text-center max-w-2xl xl:max-w-4xl mx-auto p-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-8 xl:mb-16">
+        <h1 className="text-2xl font-bold text-gray-800 mb-4">
           <a href="https://perl.is" className="hover:underline">perl.is</a>
         </h1>
+        <h2 className="text-lg text-gray-600 mb-8 xl:mb-16">A free API for random Alan Perlis epigrams.</h2>
         <div className="relative mb-8">
           <span className="absolute top-0 left-0 xl:text-9xl text-6xl text-gray-300 font-serif">&ldquo;</span>
           <p className="text-2xl xl:text-4xl font-serif text-gray-800 italic px-8 pt-6 xl:px-16 xl:pt-12">{quote}</p>
@@ -182,9 +183,9 @@ function App() {
           </div>
         </div>
       </div>
-      <div className="mt-8 text-center text-lg">
+      <div className="my-8 text-center text-lg">
         <p className="mb-2">Made by{" "}<a href="https://twitter.com/rybickic" className="text-blue-500 hover:underline">@rybickic</a></p>
-        <a href="https://github.com/Chriscbr/perl.is">
+        <a href="https://github.com/Chriscbr/perl.is" className="inline-block">
           <img src="https://img.shields.io/github/stars/Chriscbr/perl.is?style=social" alt="Github Link" />
         </a>
       </div>
