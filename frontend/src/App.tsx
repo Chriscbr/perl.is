@@ -145,23 +145,23 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
       <div className="text-center max-w-2xl xl:max-w-4xl mx-auto p-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">
+        <h1 className="text-2xl font-bold text-gray-800 mb-3">
           <a href="https://perl.is" className="hover:underline">perl.is</a>
         </h1>
-        <h2 className="text-lg text-gray-600 mb-8 xl:mb-16">A free API for random Alan Perlis epigrams.</h2>
-        <div className="relative mb-8">
+        <h2 className="text-lg text-gray-600 mb-6">A free API for random Alan Perlis epigrams.</h2>
+        <div className="relative">
           <span className="absolute top-0 left-0 xl:text-9xl text-6xl text-gray-300 font-serif">&ldquo;</span>
           <p className="text-2xl xl:text-4xl font-serif text-gray-800 italic px-8 pt-6 xl:px-16 xl:pt-12">{quote}</p>
           <span className="absolute bottom-[-3rem] xl:bottom-[-5rem] right-0 xl:text-9xl text-6xl text-gray-300 font-serif">&rdquo;</span>
         </div>
-        <p className="text-right text-xl xl:text-3xl text-gray-600 font-serif mt-4 mb-8 xl:mt-8 xl:mb-16">&mdash; Alan Perlis</p>
+        <p className="text-right text-xl xl:text-3xl text-gray-600 font-serif mt-4 mb-8 xl:mt-8">&mdash; Alan Perlis</p>
         <button
           onClick={getRandomQuote}
           className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
         >
           New Quote
         </button>
-        <div className="mt-10 max-w-sm mx-auto">
+        <div className="mt-6 max-w-sm mx-auto">
           <p className="text-sm text-gray-600 mb-2 text-left">Generate a random quote programmatically:</p>
           <div className="border border-gray-300 rounded p-2 flex items-center justify-between bg-gray-200">
             <p className="font-mono px-3 py-2 rounded">curl{" "}<a href="https://perl.is/api" className="text-blue-500 hover:underline">https://perl.is/api</a></p>
@@ -183,7 +183,7 @@ function App() {
           </div>
         </div>
       </div>
-      <div className="my-8 text-center text-lg">
+      <div className="mb-8 text-center text-lg">
         <p className="mb-2">Made by{" "}<a href="https://twitter.com/rybickic" className="text-blue-500 hover:underline">@rybickic</a></p>
         <a href="https://github.com/Chriscbr/perl.is" className="inline-block">
           <img src="https://img.shields.io/github/stars/Chriscbr/perl.is?style=social" alt="Github Link" />
