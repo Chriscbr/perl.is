@@ -2,7 +2,7 @@ A single serving website that provides random epigrams from Alan Perlis, built f
 
 Whenever I see one of these quotes, I tend to be impressed by how relevant a lot of them still seem, and how insane of a Twitter poster he'd probably have been if he was still around today.
 
-Hosted with [fly.io](https://fly.io/).
+Hosted with [fly.io](https://fly.io/), though any way to deploy Docker containers would work.
 
 ## Development
 
