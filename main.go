@@ -139,7 +139,6 @@ type Response struct {
 }
 
 func apiHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Received request: %s %s", r.Method, r.URL.Path)
 	idx := rand.Intn(len(quotes))
 	response := Response{QuoteId: idx, Quote: quotes[idx]}
 	w.Header().Set("Content-Type", "application/json")
