@@ -2,11 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/exp/rand"
 )
 
@@ -133,14 +136,63 @@ var quotes = []string{
 	"Adapting old programs to fit new machines usually means adapting new machines to behave like old ones.",
 }
 
-type Response struct {
+type RandomResponse struct {
 	QuoteId int    `json:"id"`
 	Quote   string `json:"quote"`
+	Votes   int    `json:"votes,omitempty"`
 }
 
-func apiHandler(w http.ResponseWriter, r *http.Request) {
+type VoteResponse struct {
+	Success bool `json:"success"`
+}
+
+var redisClient *redis.Client
+
+func randomHandler(w http.ResponseWriter, r *http.Request) {
 	idx := rand.Intn(len(quotes))
-	response := Response{QuoteId: idx, Quote: quotes[idx]}
+
+	withVotes := r.URL.Query().Get("withVotes") == "true"
+
+	var votesInt int
+	if withVotes {
+		votes, err := redisClient.Get(r.Context(), fmt.Sprintf("vote:%d", idx)).Result()
+		if err != nil {
+			votes = "0"
+			err = redisClient.Set(r.Context(), fmt.Sprintf("vote:%d", idx), votes, 0).Err()
+			if err != nil {
+				log.Printf("Error setting vote count for quote %d: %v", idx, err)
+			}
+		}
+
+		votesInt, err = strconv.Atoi(votes)
+		if err != nil {
+			log.Printf("Error converting vote count for quote %d: %v", idx, err)
+			votesInt = 0
+		}
+	}
+
+	response := RandomResponse{QuoteId: idx, Quote: quotes[idx], Votes: votesInt}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func voteHandler(w http.ResponseWriter, r *http.Request) {
+	idString := r.PathValue("id")
+	id, err := strconv.Atoi(idString)
+	if err != nil {
+		log.Printf("Error converting vote count for quote %s: %v", idString, err)
+		id = 0
+	}
+
+	err = redisClient.Incr(r.Context(), fmt.Sprintf("vote:%d", id)).Err()
+	if err != nil {
+		log.Printf("Error incrementing vote count for quote %d: %v", id, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(VoteResponse{Success: false})
+		return
+	}
+
+	response := VoteResponse{Success: err == nil}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
@@ -172,12 +224,28 @@ func main() {
 	log.SetOutput(os.Stdout)
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile)
 
+	// Initialize Redis client
+	redisURL := os.Getenv("REDIS_URL")
+	if redisURL == "" {
+		log.Fatal("REDIS_URL is not set")
+		return
+	}
+
+	redisOpts, err := redis.ParseURL(redisURL)
+	if err != nil {
+		log.Fatalf("Failed to parse Redis URL: %v", err)
+	}
+	redisClient = redis.NewClient(redisOpts)
+
 	// Serve the React static files
 	fs := http.FileServer(http.Dir("./frontend/build"))
-	http.Handle("/", loggingMiddleware(corsMiddleware(fs)))
+	http.Handle("/", loggingMiddleware(fs))
 
-	// Handle the API endpoint
-	http.Handle("/api", loggingMiddleware(corsMiddleware(http.HandlerFunc(apiHandler))))
+	// Handle the main API endpoint for fetching a random quote
+	http.Handle("GET /random", loggingMiddleware(corsMiddleware(http.HandlerFunc(randomHandler))))
+
+	// Handle the endpoint for voting on a quote
+	http.Handle("POST /vote/{id}", loggingMiddleware(corsMiddleware(http.HandlerFunc(voteHandler))))
 
 	// Start the server
 	log.Println("Server starting on :8080")

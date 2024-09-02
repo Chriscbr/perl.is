@@ -5,6 +5,7 @@ import ClipboardIcon from './ClipboardIcon';
 
 function App() {
   const [quote, setQuote] = useState("");
+  const [quoteId, setQuoteId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [votes, setVotes] = useState(0);
@@ -12,7 +13,7 @@ function App() {
   const [showVoting, setShowVoting] = useState(false);
 
   const copyToClipboard = () => {
-    navigator.clipboard.writeText('curl https://perl.is/api');
+    navigator.clipboard.writeText('curl https://perl.is/random');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
   };
@@ -20,13 +21,14 @@ function App() {
   const getRandomQuote = async () => {
     setError(null);
     try {
-      const response = await fetch('https://perl.is/api');
+      const response = await fetch('/random?withVotes=true');
       if (!response.ok) {
         throw new Error('Failed to fetch quote');
       }
       const data = await response.json();
       setQuote(data.quote);
-      setVotes(0); // Reset votes for new quote
+      setQuoteId(data.id);
+      setVotes(data?.votes ?? 0);
       setHasVoted(false); // Reset voting status for new quote
     } catch (error) {
       console.error('Error fetching quote:', error);
@@ -42,10 +44,18 @@ function App() {
     setShowVoting(urlParams.get('voting') === 'true');
   }, [urlParams]);
 
-  const upvoteQuote = () => {
+  const upvoteQuote = async () => {
     if (!hasVoted) {
-      setVotes(prevVotes => prevVotes + 1);
-      setHasVoted(true);
+      try {
+        const response = await fetch(`/vote/${quoteId}`, { method: 'POST' });
+        if (!response.ok) {
+          throw new Error(`Server responded with status: ${response.status}`)
+        }
+        setVotes(prevVotes => prevVotes + 1);
+        setHasVoted(true);
+      } catch (error) {
+        console.error(`Error voting for quote ${quoteId}:`, error);
+      }
     }
   };
 
@@ -107,7 +117,7 @@ function App() {
         <div className="mt-6 max-w-sm mx-auto">
           <p className="text-sm text-gray-600 mb-2 text-left">Generate a random quote programmatically:</p>
           <div className="border border-gray-300 rounded p-2 flex items-center justify-between bg-gray-200">
-            <p className="font-mono px-3 py-2 rounded">curl{" "}<a href="https://perl.is/api" className="text-blue-500 hover:underline">https://perl.is/api</a></p>
+            <p className="font-mono px-3 py-2 rounded">curl{" "}<a href="https://perl.is/random" className="text-blue-500 hover:underline">https://perl.is/random</a></p>
             <button
               onClick={copyToClipboard}
               className={`mr-2 text-gray-500 hover:text-gray-700 transition-colors duration-200 ${copied ? 'text-green-500' : ''}`}
