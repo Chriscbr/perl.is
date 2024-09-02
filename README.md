@@ -1,8 +1,12 @@
+[![](./screenshot.png)](https://perl.is)
+
+[![Better Stack Badge](https://uptime.betterstack.com/status-badges/v1/monitor/1j5mg.svg)](https://uptime.betterstack.com/?utm_source=status_badge)
+
 A single serving website that provides random epigrams from Alan Perlis, built for fun.
 
 Whenever I see one of these quotes, I tend to be impressed by how relevant a lot of them still seem, and how insane of a Twitter poster he'd probably have been if he was still around today.
 
-Hosted with [Fly.io](https://fly.io/), though any way to deploy Docker containers would work.
+Hosted with [Fly.io](https://fly.io/), using [Redis](https://redis.io/) for vote tracking and [reCAPTCHA](https://www.google.com/recaptcha/about/) for preventing abuse.
 
 ## Development
 
@@ -32,7 +36,7 @@ Whenever you make changes to your TypeScript code, the browser will automaticall
 
 ----
 
-For local development of the backend, you can run the Go server directly with `go run main.go`. But you must ensure:
+For local development of the backend, you can run the Go server directly with `go run main.go`. But you must first ensure:
 
 1. The frontend has been built (`cd frontend && npm run build`)
 2. You have an instance of Redis running locally. For example, you can run one with Docker: `docker run --name perlis-redis -d redis`
