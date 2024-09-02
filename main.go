@@ -149,7 +149,12 @@ var redisClient *redis.Client
 type RandomResponse struct {
 	QuoteId int    `json:"id"`
 	Quote   string `json:"quote"`
-	Votes   int    `json:"votes,omitempty"`
+}
+
+type RandomResponseWithVotes struct {
+	QuoteId int    `json:"id"`
+	Quote   string `json:"quote"`
+	Votes   int    `json:"votes"`
 }
 
 type VoteResponse struct {
@@ -162,6 +167,7 @@ func randomHandler(w http.ResponseWriter, r *http.Request) {
 	withVotes := r.URL.Query().Get("withVotes") == "true"
 
 	var votesInt int
+	var response interface{}
 	if withVotes {
 		votes, err := redisClient.Get(r.Context(), fmt.Sprintf("vote:%d", idx)).Result()
 		if err != nil {
@@ -177,9 +183,12 @@ func randomHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Error converting vote count for quote %d: %v", idx, err)
 			votesInt = 0
 		}
+
+		response = RandomResponseWithVotes{QuoteId: idx, Quote: quotes[idx], Votes: votesInt}
+	} else {
+		response = RandomResponse{QuoteId: idx, Quote: quotes[idx]}
 	}
 
-	response := RandomResponse{QuoteId: idx, Quote: quotes[idx], Votes: votesInt}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
@@ -194,8 +203,15 @@ func voteHandler(w http.ResponseWriter, r *http.Request) {
 	idString := r.PathValue("id")
 	id, err := strconv.Atoi(idString)
 	if err != nil {
-		log.Printf("Error converting vote count for quote %s: %v", idString, err)
-		id = 0
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(VoteResponse{Success: false})
+		return
+	}
+
+	if id < 0 || id >= len(quotes) {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(VoteResponse{Success: false})
+		return
 	}
 
 	err = redisClient.Incr(r.Context(), fmt.Sprintf("vote:%d", id)).Err()

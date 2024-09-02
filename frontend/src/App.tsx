@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import CheckIcon from './CheckIcon';
 import ClipboardIcon from './ClipboardIcon';
 import { getRecaptchaToken } from './recaptcha';
