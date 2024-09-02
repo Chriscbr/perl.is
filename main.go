@@ -71,7 +71,7 @@ var quotes = []string{
 	"Giving up on assembly language was the apple in our Garden of Eden: Languages whose use squanders machine cycles are sinful. The LISP machine now permits LISP programmers to abandon bra and fig-leaf.",
 	"When we understand knowledge-based systems, it will be as before -- except our fingertips will have been singed.",
 	"Bringing computers into the home won't change either one, but may revitalize the corner saloon.",
-	"Systems have sub-systems and sub-systems have sub- systems and so on ad infinitum - which is why we're always starting over.",
+	"Systems have sub-systems and sub-systems have sub-systems and so on ad infinitum - which is why we're always starting over.",
 	"So many good ideas are never heard from again once they embark in a voyage on the semantic gulf.",
 	"Beware of the Turing tar-pit in which everything is possible but nothing of interest is easy.",
 	"A LISP programmer knows the value of everything, but the cost of nothing.",
@@ -212,6 +212,11 @@ func voteHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func checkRecaptchaHeader(r *http.Request, action string) bool {
+	if os.Getenv("RECAPTCHA_DISABLED") == "true" {
+		log.Println("RECAPTCHA is disabled")
+		return true
+	}
+
 	token := r.Header.Get("X-Recaptcha-Token")
 	if token == "" {
 		return false
@@ -324,14 +329,16 @@ func main() {
 	}
 
 	// Load all environment variables
+	recaptchaDisabled := os.Getenv("RECAPTCHA_DISABLED") == "true"
+
 	recaptchaProjectID = os.Getenv("RECAPTCHA_PROJECT_ID")
-	if recaptchaProjectID == "" {
+	if recaptchaProjectID == "" && !recaptchaDisabled {
 		log.Fatal("RECAPTCHA_PROJECT_ID is not set")
 		return
 	}
 
 	recaptchaKey = os.Getenv("RECAPTCHA_KEY")
-	if recaptchaKey == "" {
+	if recaptchaKey == "" && !recaptchaDisabled {
 		log.Fatal("RECAPTCHA_KEY is not set")
 		return
 	}

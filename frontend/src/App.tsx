@@ -1,16 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import UpvoteIcon from './UpvoteIcon';
 import CheckIcon from './CheckIcon';
 import ClipboardIcon from './ClipboardIcon';
+import { getRecaptchaToken } from './recaptcha';
+import VoteButton from './VoteButton';
+import QuoteDisplay from './QuoteDisplay';
 
-async function getRecaptchaToken(action: string): Promise<string> {
-  return new Promise<string>((resolve) => {
-    window.grecaptcha.enterprise.ready(async () => {
-      const result = await window.grecaptcha.enterprise.execute('6Lc-VjQqAAAAAAf_9RhQ6xiDJyl6vpQz1vtC7CUB', { action });
-      resolve(result);
-    });
-  });
-}
+const API_URL = process.env.REACT_APP_API_URL ?? '';
 
 function App() {
   const [quote, setQuote] = useState("");
@@ -30,7 +25,7 @@ function App() {
   const getRandomQuote = async () => {
     setError(null);
     try {
-      const response = await fetch(showVoting ? '/random?withVotes=true' : '/random');
+      const response = await fetch(showVoting ? `${API_URL}/random?withVotes=true` : `${API_URL}/random`);
       if (!response.ok) {
         throw new Error('Failed to fetch quote');
       }
@@ -88,27 +83,7 @@ function App() {
           <a href="https://perl.is" className="hover:underline">perl.is</a>
         </h1>
         <h2 className="text-lg text-gray-600 mb-6">A free API for random Alan Perlis epigrams.</h2>
-        <div className="relative">
-          {quote !== "" ? (
-            <>
-              <span className="absolute top-0 left-0 xl:text-9xl text-6xl text-gray-300 font-serif">&ldquo;</span>
-              <p className="text-2xl xl:text-4xl font-serif text-gray-800 italic px-8 pt-6 xl:px-16 xl:pt-12">{quote}</p>
-              <span className="absolute bottom-[-2rem] xl:bottom-[-5rem] right-0 xl:text-9xl text-6xl text-gray-300 font-serif">&rdquo;</span>
-            </>
-          ) : error ? (
-            <div className="text-red-500 text-xl">
-              <p>{error}</p>
-              <button
-                onClick={getRandomQuote}
-                className="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-              >
-                Try Again
-              </button>
-            </div>
-          ) : (
-            <p className="text-2xl xl:text-4xl font-serif text-gray-800 italic px-8 pt-6 xl:px-16 xl:pt-12">Loading quote...</p>
-          )}
-        </div>
+        <QuoteDisplay quote={quote} error={error} getRandomQuote={getRandomQuote} />
         {quote !== "" && !error && (
           <>
             <p className="text-right text-xl xl:text-3xl text-gray-600 font-serif mt-4 mb-8 xl:mt-8">&mdash; Alan Perlis</p>
@@ -120,14 +95,7 @@ function App() {
                 New Quote
               </button>
               {showVoting && (
-                <button
-                  onClick={upvoteQuote}
-                  className={`bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded flex items-center ${hasVoted ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  disabled={hasVoted}
-                >
-                  <UpvoteIcon className="h-5 w-5 mr-2" />
-                  {votes} {votes === 1 ? 'Vote' : 'Votes'}
-                </button>
+                <VoteButton votes={votes} hasVoted={hasVoted} upvoteQuote={upvoteQuote} />
               )}
             </div>
           </>
