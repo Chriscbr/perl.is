@@ -14,7 +14,6 @@ function App() {
   const [copied, setCopied] = useState(false);
   const [votes, setVotes] = useState(0);
   const [hasVoted, setHasVoted] = useState(false);
-  const [showVoting, setShowVoting] = useState(false);
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText('curl https://perl.is/random');
@@ -25,7 +24,7 @@ function App() {
   const getRandomQuote = async () => {
     setError(null);
     try {
-      const response = await fetch(showVoting ? `${API_URL}/random?withVotes=true` : `${API_URL}/random`);
+      const response = await fetch(`${API_URL}/random?withVotes=true`);
       if (!response.ok) {
         throw new Error('Failed to fetch quote');
       }
@@ -40,13 +39,6 @@ function App() {
       setQuote('');
     }
   };
-
-  const urlParams = useMemo(() => new URLSearchParams(window.location.search), []);
-
-  useEffect(() => {
-    // Check if the 'voting' parameter is set to 'true'
-    setShowVoting(urlParams.get('voting') === 'true');
-  }, [urlParams]);
 
   const upvoteQuote = useCallback(async () => {
     if (!hasVoted && quoteId !== null) {
@@ -94,9 +86,7 @@ function App() {
               >
                 New Quote
               </button>
-              {showVoting && (
-                <VoteButton votes={votes} hasVoted={hasVoted} upvoteQuote={upvoteQuote} />
-              )}
+              <VoteButton votes={votes} hasVoted={hasVoted} upvoteQuote={upvoteQuote} />
             </div>
           </>
         )}
