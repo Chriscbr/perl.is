@@ -1,7 +1,16 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import UpvoteIcon from './UpvoteIcon';
 import CheckIcon from './CheckIcon';
 import ClipboardIcon from './ClipboardIcon';
+
+async function getRecaptchaToken(action: string): Promise<string> {
+  return new Promise<string>((resolve) => {
+    window.grecaptcha.enterprise.ready(async () => {
+      const result = await window.grecaptcha.enterprise.execute('6Lc-VjQqAAAAAAf_9RhQ6xiDJyl6vpQz1vtC7CUB', { action });
+      resolve(result);
+    });
+  });
+}
 
 function App() {
   const [quote, setQuote] = useState("");
@@ -21,7 +30,7 @@ function App() {
   const getRandomQuote = async () => {
     setError(null);
     try {
-      const response = await fetch('/random?withVotes=true');
+      const response = await fetch(showVoting ? '/random?withVotes=true' : '/random');
       if (!response.ok) {
         throw new Error('Failed to fetch quote');
       }
@@ -44,20 +53,29 @@ function App() {
     setShowVoting(urlParams.get('voting') === 'true');
   }, [urlParams]);
 
-  const upvoteQuote = async () => {
-    if (!hasVoted) {
+  const upvoteQuote = useCallback(async () => {
+    if (!hasVoted && quoteId !== null) {
+      setVotes(prevVotes => prevVotes + 1);
+      setHasVoted(true);
       try {
-        const response = await fetch(`/vote/${quoteId}`, { method: 'POST' });
+        const token = await getRecaptchaToken('VOTE');
+        const response = await fetch(`/vote/${quoteId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Recaptcha-Token': token,
+          },
+        });
+
         if (!response.ok) {
-          throw new Error(`Server responded with status: ${response.status}`)
+          throw new Error(`Server responded with status: ${response.status}`);
         }
-        setVotes(prevVotes => prevVotes + 1);
-        setHasVoted(true);
+
       } catch (error) {
         console.error(`Error voting for quote ${quoteId}:`, error);
       }
     }
-  };
+  }, [hasVoted, quoteId]);
 
   useEffect(() => {
     getRandomQuote();

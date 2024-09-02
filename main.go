@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -9,8 +10,13 @@ import (
 	"strconv"
 	"time"
 
+	"math/rand/v2"
+
+	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
-	"golang.org/x/exp/rand"
+
+	recaptcha "cloud.google.com/go/recaptchaenterprise/v2/apiv1"
+	recaptchapb "cloud.google.com/go/recaptchaenterprise/v2/apiv1/recaptchaenterprisepb"
 )
 
 var quotes = []string{
@@ -136,6 +142,10 @@ var quotes = []string{
 	"Adapting old programs to fit new machines usually means adapting new machines to behave like old ones.",
 }
 
+var recaptchaProjectID string
+var recaptchaKey string
+var redisClient *redis.Client
+
 type RandomResponse struct {
 	QuoteId int    `json:"id"`
 	Quote   string `json:"quote"`
@@ -146,10 +156,8 @@ type VoteResponse struct {
 	Success bool `json:"success"`
 }
 
-var redisClient *redis.Client
-
 func randomHandler(w http.ResponseWriter, r *http.Request) {
-	idx := rand.Intn(len(quotes))
+	idx := rand.IntN(len(quotes))
 
 	withVotes := r.URL.Query().Get("withVotes") == "true"
 
@@ -177,6 +185,12 @@ func randomHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func voteHandler(w http.ResponseWriter, r *http.Request) {
+	if !checkRecaptchaHeader(r, "VOTE") {
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(VoteResponse{Success: false})
+		return
+	}
+
 	idString := r.PathValue("id")
 	id, err := strconv.Atoi(idString)
 	if err != nil {
@@ -195,6 +209,26 @@ func voteHandler(w http.ResponseWriter, r *http.Request) {
 	response := VoteResponse{Success: err == nil}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+func checkRecaptchaHeader(r *http.Request, action string) bool {
+	token := r.Header.Get("X-Recaptcha-Token")
+	if token == "" {
+		return false
+	}
+
+	if recaptchaProjectID == "" {
+		log.Fatal("RECAPTCHA_PROJECT_ID is not set")
+		return false
+	}
+
+	if recaptchaKey == "" {
+		log.Fatal("RECAPTCHA_KEY is not set")
+		return false
+	}
+
+	score := createAssessment(r.Context(), recaptchaProjectID, recaptchaKey, token, action)
+	return score >= 0.5
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
@@ -220,17 +254,95 @@ func loggingMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+// Create a reCAPTCHA assessment to check if a UI action is legitimate.
+// Returns a score between 0 and 1 indicating the risk of the action. (0 = fake, 1 = real)
+func createAssessment(ctx context.Context, projectID string, recaptchaKey string, token string, recaptchaAction string) float32 {
+	// Create the reCAPTCHA client.
+	client, err := recaptcha.NewClient(ctx)
+	if err != nil {
+		log.Printf("Error creating reCAPTCHA client: %v\n", err)
+	}
+	defer client.Close()
+
+	// Set the properties of the event to be tracked.
+	event := &recaptchapb.Event{
+		Token:   token,
+		SiteKey: recaptchaKey,
+	}
+
+	assessment := &recaptchapb.Assessment{
+		Event: event,
+	}
+
+	// Build the assessment request.
+	request := &recaptchapb.CreateAssessmentRequest{
+		Assessment: assessment,
+		Parent:     fmt.Sprintf("projects/%s", projectID),
+	}
+
+	response, err := client.CreateAssessment(ctx, request)
+
+	if err != nil {
+		log.Fatalf("Error calling CreateAssessment: %v", err.Error())
+		return 0
+	}
+
+	// Check if the token is valid.
+	if !response.TokenProperties.Valid {
+		log.Fatalf("The CreateAssessment() call failed because the token was invalid for the following reasons: %v",
+			response.TokenProperties.InvalidReason)
+		return 0
+	}
+
+	// Check if the expected action was executed.
+	if response.TokenProperties.Action != recaptchaAction {
+		log.Fatalf("The action attribute in your reCAPTCHA tag does not match the action you are expecting to score")
+		return 0
+	}
+
+	// Get the risk score and the reason(s).
+	// For more information on interpreting the assessment, see:
+	// https://cloud.google.com/recaptcha-enterprise/docs/interpret-assessment
+	reasons := ""
+	for _, reason := range response.RiskAnalysis.Reasons {
+		reasons += reason.String() + " "
+	}
+	log.Printf("reCAPTCHA score: %v, reasons: %v", response.RiskAnalysis.Score, reasons)
+
+	return response.RiskAnalysis.Score
+}
+
 func main() {
+	// Configure logging
 	log.SetOutput(os.Stdout)
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile)
 
-	// Initialize Redis client
+	// Load environment variables (for local development)
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Warning: No .env file found")
+	}
+
+	// Load all environment variables
+	recaptchaProjectID = os.Getenv("RECAPTCHA_PROJECT_ID")
+	if recaptchaProjectID == "" {
+		log.Fatal("RECAPTCHA_PROJECT_ID is not set")
+		return
+	}
+
+	recaptchaKey = os.Getenv("RECAPTCHA_KEY")
+	if recaptchaKey == "" {
+		log.Fatal("RECAPTCHA_KEY is not set")
+		return
+	}
+
 	redisURL := os.Getenv("REDIS_URL")
 	if redisURL == "" {
 		log.Fatal("REDIS_URL is not set")
 		return
 	}
 
+	// Create a Redis client
 	redisOpts, err := redis.ParseURL(redisURL)
 	if err != nil {
 		log.Fatalf("Failed to parse Redis URL: %v", err)

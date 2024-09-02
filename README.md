@@ -6,11 +6,6 @@ Hosted with [Fly.io](https://fly.io/), though any way to deploy Docker container
 
 ## Development
 
-* `cd frontend && npm run build` - build the frontend
-* `cd frontend && npm run start` - run the frontend locally
-* `go run main.go` - run the Go server locally
-* `fly deploy` - deploy to Fly.io
-
 To test the application locally, run:
 
 ```
@@ -36,3 +31,10 @@ For hot reloading (backend), you can use [air](https://github.com/air-verse/air)
 ```
 REDIS_URL=redis://localhost:6379 air -build.exclude_dir "frontend/node_modules"
 ```
+
+Other helpful commands:
+
+* `cd frontend && npm run build` - build the frontend
+* `cd frontend && npm run start` - run the frontend locally
+* `fly deploy` - deploy to Fly.io
+* `fly secrets`, `fly certs`, `fly redis` - manage Fly.io resources for this app
