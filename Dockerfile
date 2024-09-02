@@ -18,6 +18,12 @@ WORKDIR /app
 COPY --from=builder /run-app .
 COPY --from=frontend-builder /app/frontend/build ./frontend/build
 
+COPY setup-gcp-creds.sh /usr/local/bin/setup-gcp-creds.sh
+RUN chmod +x /usr/local/bin/setup-gcp-creds.sh
+
 EXPOSE 8080
+
+ENTRYPOINT ["/usr/local/bin/setup-gcp-creds.sh"]
+ENV GOOGLE_APPLICATION_CREDENTIALS=/var/run/credentials.json
 
 CMD ["./run-app"]

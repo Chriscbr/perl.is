@@ -37,7 +37,9 @@ For local development of the backend, you can run the Go server directly with `g
 1. The frontend has been built (`cd frontend && npm run build`)
 2. You have an instance of Redis running locally. For example, you can run one with Docker: `docker run --name perlis-redis -d redis`
 3. The `REDIS_URL` environment variable is set to `redis://localhost:6379`.
-4. The `RECAPTCHA_SECRET` and `RECAPTCHA_SITE_KEY` environment variables are set to your reCAPTCHA site's secret and site key, respectively. OR, you can set `RECAPTCHA_DISABLED` to `true` to disable reCAPTCHA.
+4. The `RECAPTCHA_DISABLED` environment variable is set to `true` to disable reCAPTCHA.
+
+(If you do want to use reCAPTCHA, you must set the `RECAPTCHA_PROJECT_ID` and `RECAPTCHA_KEY` environment variables to your Google Cloud Project ID and reCAPTCHA site key, respectively. You'll also need to authenticate locally with the gcloud CLI).
 
 For hot reloading, you can use [air](https://github.com/air-verse/air) to automatically restart the server when you make changes:
 
