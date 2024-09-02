@@ -145,6 +145,21 @@ func apiHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -159,10 +174,10 @@ func main() {
 
 	// Serve the React static files
 	fs := http.FileServer(http.Dir("./frontend/build"))
-	http.Handle("/", loggingMiddleware(fs))
+	http.Handle("/", loggingMiddleware(corsMiddleware(fs)))
 
 	// Handle the API endpoint
-	http.Handle("/api", loggingMiddleware(http.HandlerFunc(apiHandler)))
+	http.Handle("/api", loggingMiddleware(corsMiddleware(http.HandlerFunc(apiHandler))))
 
 	// Start the server
 	log.Println("Server starting on :8080")
