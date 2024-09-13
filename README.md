@@ -26,10 +26,10 @@ docker-compose down
 
 ----
 
-For local development of the frontend against the live backend, set the `REACT_APP_API_URL` environment variable to `https://perl.is` and run `npm start` from the `frontend` directory:
+For local development of the frontend against the live backend, set the `NEXT_PUBLIC_API_URL` environment variable to `https://perl.is` and run `npm run dev` from the `frontend` directory:
 
 ```
-REACT_APP_API_URL=https://perl.is npm start
+NEXT_PUBLIC_API_URL=https://perl.is npm run dev
 ```
 
 Whenever you make changes to your TypeScript code, the browser will automatically refresh.
@@ -56,6 +56,6 @@ air -build.exclude_dir "frontend/node_modules"
 Other helpful commands:
 
 * `cd frontend && npm run build` - build the frontend
-* `cd frontend && npm run start` - run the frontend locally
+* `cd frontend && npm run dev` - run the frontend locally
 * `fly deploy` - deploy to Fly.io
 * `fly secrets`, `fly certs`, `fly redis` - manage Fly.io resources for this app
