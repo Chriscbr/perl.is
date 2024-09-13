@@ -1,0 +1,7 @@
+/* imports must come first */
+@import url('https://cdn.jsdelivr.net/gh/dreampulse/computer-modern-web-font@master/fonts.css');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+

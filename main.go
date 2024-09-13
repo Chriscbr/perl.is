@@ -373,7 +373,7 @@ func main() {
 	redisClient = redis.NewClient(redisOpts)
 
 	// Serve the React static files
-	fs := http.FileServer(http.Dir("./frontend/build"))
+	fs := http.FileServer(http.Dir("./frontend/out"))
 	http.Handle("/", loggingMiddleware(fs))
 
 	// Handle the main API endpoint for fetching a random quote

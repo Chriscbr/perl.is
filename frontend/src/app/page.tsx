@@ -1,13 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
-import CheckIcon from './CheckIcon';
-import ClipboardIcon from './ClipboardIcon';
-import { getRecaptchaToken } from './recaptcha';
-import VoteButton from './VoteButton';
-import QuoteDisplay from './QuoteDisplay';
+"use client";
+import { useCallback, useEffect, useState } from "react";
+import { getRecaptchaToken } from "./recaptcha";
+import QuoteDisplay from "./QuoteDisplay";
+import VoteButton from "./VoteButton";
+import CheckIcon from "./CheckIcon";
+import ClipboardIcon from "./ClipboardIcon";
 
-const API_URL = process.env.REACT_APP_API_URL ?? '';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
 
-function App() {
+export default function Home() {
   const [quote, setQuote] = useState("");
   const [quoteId, setQuoteId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -117,5 +118,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
